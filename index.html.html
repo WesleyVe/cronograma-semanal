@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cronograma Semanal</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface2: #222222;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --text: #f0f0f0;
+    --muted: #888;
+    --faint: #555;
+    --green: #3ecf8e;
+    --green-bg: rgba(62,207,142,0.12);
+    --green-border: rgba(62,207,142,0.3);
+    --radius: 8px;
+  }
+
+  html, body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow: hidden;
+    width: 100%;
+  }
+
+  .wrap {
+    padding: 14px 16px 10px;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    gap: 10px;
+  }
+
+  .title-block h1 {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.2px;
+  }
+
+  .title-block p {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 1px;
+  }
+
+  .right-block {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .progress-block {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 6px 12px;
+  }
+
+  .progress-ring {
+    position: relative;
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+  }
+
+  .progress-ring svg { transform: rotate(-90deg); }
+  .progress-ring circle { fill: none; stroke-width: 3; }
+  .ring-bg { stroke: var(--border2); }
+  .ring-fill { stroke: var(--green); stroke-linecap: round; transition: stroke-dashoffset 0.4s ease; }
+
+  .ring-pct {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 7px;
+    font-weight: 600;
+    color: var(--green);
+  }
+
+  .progress-text { font-size: 11px; color: var(--muted); line-height: 1.3; }
+  .progress-text strong { font-size: 13px; font-weight: 600; color: var(--text); display: block; }
+
+  .btn-reset {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .btn-reset:hover { color: var(--text); border-color: var(--border2); }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  thead th {
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--faint);
+    padding: 0 6px 6px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+
+  thead th:first-child { text-align: left; width: 110px; }
+
+  tbody tr { transition: background 0.1s; }
+  tbody tr:hover { background: rgba(255,255,255,0.02); }
+
+  tbody td {
+    padding: 3px 4px;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--border);
+  }
+
+  tbody tr:last-child td { border-bottom: none; }
+
+  .time-cell {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--muted);
+    white-space: nowrap;
+    padding-left: 2px;
+  }
+
+  .cell {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    border-radius: 6px;
+    padding: 5px 7px;
+    width: 100%;
+    border: 1px solid transparent;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .cell:hover { background: var(--surface2); border-color: var(--border); }
+
+  .cell.done {
+    background: var(--green-bg);
+    border-color: var(--green-border);
+  }
+
+  .checkbox {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    border: 1.5px solid var(--faint);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.15s;
+    background: transparent;
+  }
+
+  .cell.done .checkbox {
+    background: var(--green);
+    border-color: var(--green);
+  }
+
+  .checkmark { display: none; width: 8px; height: 8px; }
+  .cell.done .checkmark { display: block; }
+
+  .act-name {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color 0.15s;
+  }
+
+  .cell.done .act-name {
+    color: var(--muted);
+    text-decoration: line-through;
+    text-decoration-color: var(--faint);
+  }
+
+  .empty-cell {
+    font-size: 11px;
+    color: var(--faint);
+    text-align: center;
+    opacity: 0.4;
+  }
+
+  .day-done-badge {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--green);
+    background: var(--green-bg);
+    border: 1px solid var(--green-border);
+    border-radius: 4px;
+    padding: 1px 4px;
+    margin-left: 4px;
+    vertical-align: middle;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .day-done-badge.visible { opacity: 1; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="title-block">
+      <h1>Cronograma Semanal</h1>
+      <p id="week-range">carregando...</p>
+    </div>
+    <div class="right-block">
+      <div class="progress-block">
+        <div class="progress-ring">
+          <svg width="28" height="28" viewBox="0 0 28 28">
+            <circle class="ring-bg" cx="14" cy="14" r="11"/>
+            <circle class="ring-fill" id="ring" cx="14" cy="14" r="11" stroke-dasharray="69.12" stroke-dashoffset="69.12"/>
+          </svg>
+          <div class="ring-pct" id="ring-pct">0%</div>
+        </div>
+        <div class="progress-text">
+          <strong id="prog-done">0 / 0</strong>
+          feitas
+        </div>
+      </div>
+      <button class="btn-reset" onclick="resetAll()">↺ Reiniciar</button>
+    </div>
+  </header>
+
+  <table>
+    <thead id="thead-row"></thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<script>
+const schedule = [
+  { time: "🕒 05h00 – 06h30", days: { seg:"🏋🏻 Academia", ter:"🏋🏻 Academia", qua:"🏋🏻 Academia", qui:"🏋🏻 Academia", sex:"🏋🏻 Academia" } },
+  { time: "🕒 12h30 – 14h00", days: { seg:"📚 Estudos MBA", ter:"📚 Estudos MBA", qua:"📚 Estudos MBA", qui:"📚 Estudos MBA", sex:"📚 Estudos MBA" } },
+  { time: "🕒 20h00 – 22h00", days: { seg:"🚨 Pendências", ter:"👨🏻‍💻 Trabalho/Grav.", qua:"⛪ Igreja", qui:"👨🏻‍💻 Trabalho/Grav.", sex:"🚨 Pendências" } },
+  { time: "🕒 22h00 – 23h00", days: { seg:"📖 Devocional", ter:"📖 Devocional", qua:"📖 Devocional", qui:"📖 Devocional", sex:"📖 Devocional" } },
+];
+
+const DAY_KEYS = ["seg","ter","qua","qui","sex"];
+const DAY_LABELS = { seg:"Segunda", ter:"Terça", qua:"Quarta", qui:"Quinta", sex:"Sexta" };
+const STORAGE_KEY = "cronograma_v2";
+
+function getMonday(d) {
+  const date = new Date(d);
+  const day = date.getDay();
+  const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+  return new Date(date.setDate(diff));
+}
+
+function formatDate(d) {
+  return d.toLocaleDateString("pt-BR", { day:"2-digit", month:"short" });
+}
+
+function getWeekKey() {
+  return getMonday(new Date()).toISOString().slice(0,10);
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return { week: getWeekKey(), checked: {} };
+    const parsed = JSON.parse(raw);
+    if (parsed.week !== getWeekKey()) return { week: getWeekKey(), checked: {} };
+    return parsed;
+  } catch { return { week: getWeekKey(), checked: {} }; }
+}
+
+function saveState(s) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch {}
+}
+
+let state = loadState();
+
+function cellId(ri, dk) { return `r${ri}_${dk}`; }
+
+function toggle(id) {
+  state.checked[id] = !state.checked[id];
+  saveState(state);
+  render();
+}
+
+function resetAll() {
+  state = { week: getWeekKey(), checked: {} };
+  saveState(state);
+  render();
+}
+
+function render() {
+  const mon = getMonday(new Date());
+  const fri = new Date(mon); fri.setDate(mon.getDate() + 4);
+  document.getElementById("week-range").textContent = `${formatDate(mon)} – ${formatDate(fri)}`;
+
+  const thead = document.getElementById("thead-row");
+  thead.innerHTML = "";
+  const trHead = document.createElement("tr");
+  const thTime = document.createElement("th");
+  thTime.textContent = "Horários";
+  trHead.appendChild(thTime);
+  DAY_KEYS.forEach(dk => {
+    const th = document.createElement("th");
+    th.innerHTML = `${DAY_LABELS[dk]} <span class="day-done-badge" id="badge_${dk}">✓</span>`;
+    trHead.appendChild(th);
+  });
+  thead.appendChild(trHead);
+
+  const tbody = document.getElementById("tbody");
+  tbody.innerHTML = "";
+
+  let total = 0, done = 0;
+  const dayTotals = {}, dayDone = {};
+  DAY_KEYS.forEach(dk => { dayTotals[dk] = 0; dayDone[dk] = 0; });
+
+  schedule.forEach((row, ri) => {
+    const tr = document.createElement("tr");
+    const tdTime = document.createElement("td");
+    tdTime.className = "time-cell";
+    tdTime.textContent = row.time;
+    tr.appendChild(tdTime);
+
+    DAY_KEYS.forEach(dk => {
+      const act = row.days[dk];
+      const td = document.createElement("td");
+      if (!act) { td.innerHTML = `<span class="empty-cell">—</span>`; tr.appendChild(td); return; }
+      total++; dayTotals[dk]++;
+      const id = cellId(ri, dk);
+      const checked = !!state.checked[id];
+      if (checked) { done++; dayDone[dk]++; }
+      td.innerHTML = `
+        <div class="cell ${checked ? 'done' : ''}" onclick="toggle('${id}')">
+          <div class="checkbox">
+            <svg class="checkmark" viewBox="0 0 10 8" fill="none">
+              <path d="M1 4L3.5 6.5L9 1.5" stroke="#0f0f0f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <span class="act-name">${act}</span>
+        </div>`;
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+
+  const circ = 69.12;
+  const pct = total ? Math.round(done / total * 100) : 0;
+  document.getElementById("ring").style.strokeDashoffset = circ - (pct / 100) * circ;
+  document.getElementById("ring-pct").textContent = pct + "%";
+  document.getElementById("prog-done").textContent = `${done} / ${total}`;
+
+  DAY_KEYS.forEach(dk => {
+    const badge = document.getElementById(`badge_${dk}`);
+    if (badge) badge.classList.toggle("visible", dayTotals[dk] > 0 && dayDone[dk] === dayTotals[dk]);
+  });
+}
+
+render();
+</script>
+</body>
+</html>
